@@ -1,5 +1,6 @@
 
 Influenced by Adam A. Flynn's code which is licensed LGPL.
+http://www.criticaldevelopment.net/xml/parser_php5.phps
 
 The file Testable.php is mostly copy-n-pasted from Kris' answer on stackoverflow.
 http://stackoverflow.com/a/292305/153117
