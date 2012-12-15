@@ -4,9 +4,11 @@ XML To stdClass SAX Parser
 What does it do?
 ----------------
 It takes XML input, like this:
+
     <one><two><three>four</three></two></one>
 
 and returns an stdClass instance looking like this (according to print_r):
+
     stdClass Object
     (
         [one] => stdClass Object
@@ -19,6 +21,7 @@ and returns an stdClass instance looking like this (according to print_r):
     )
 
 which is similar to doing this:
+
     $result = new stdClass();
     $result->one = new stdClass();
     $result->one->two = new stdClass();
