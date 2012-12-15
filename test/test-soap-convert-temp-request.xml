@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:web="http://www.webserviceX.NET/">
+   <soap:Header/>
+   <soap:Body>
+      <web:ConvertTemp>
+         <web:Temperature>100</web:Temperature>
+         <web:FromUnit>degreeCelsius</web:FromUnit>
+         <web:ToUnit>kelvin</web:ToUnit>
+      </web:ConvertTemp>
+   </soap:Body>
+</soap:Envelope>

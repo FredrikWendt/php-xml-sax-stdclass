@@ -1,0 +1,65 @@
+This is an overview of what happens in the SAX parser handler class,
+when given the following XML:
+
+<one><two><three>four</three></two></one>
+
+
+# init
+$this->parent = new stdClass();
+$this->current = $this->parent;
+$this->push($this->current); 
+# root, root, [ root ]
+
+# start one
+$this->push($this->current);
+$this->parent = $this->current;
+
+$this->current = new stdClass();
+$this->parent->one = $this->current;
+# one, root, [ root, one ] 
+
+# start two
+$this->push($this->current); # [ root, one, two ]
+$this->parent = $this->current;
+
+$this->current = new stdClass();
+$this->parent->two = $this->current;
+# two, one, [ root, one, two ] 
+
+# start three
+$this->push($this->current); # [ root, one, two, three ]
+$this->parent = $this->current;
+
+$this->current = new stdClass();
+$this->parent->two = $this->current;
+# three, two [ root, one, two, three ] 
+
+# char data
+$this->cdata = $cdata;
+# three, two [ root, one, two, three ] 
+
+# end three
+if (isset($this->cdata)) {
+	unset($this->cdata);
+	$this->parent->three = $this->cdata;
+}
+$this->current = $this->pop($this->nodes);
+$this->parent  = $this->peek($this->nodes);
+# three, two [ root, one, two, three ] 
+
+# end two
+if (isset($this->cdata)) {
+	unset($this->cdata);
+	$this->parent->three = $this->cdata;
+}
+$this->current = $this->pop($this->nodes);
+$this->parent  = $this->peek($this->nodes);
+
+# end one
+if (isset($this->cdata)) {
+	unset($this->cdata);
+	$this->parent->three = $this->cdata;
+}
+$this->current = $this->pop($this->nodes);
+$this->parent  = $this->peek($this->nodes);
+
