@@ -38,7 +38,7 @@ while still being able to test interactions with it. Like this:
       function test_some_interaction() {
         $database_layer = Phockito::mock("DatabaseLayerInterface");
         $soap_client = new SoapClientMock();
-        $testee = new SomeClass($soap_client);
+        $testee = new SomeClass($soap_client, $database_layer);
 
         // arrange
         $person_id = "1";
@@ -72,6 +72,11 @@ Is it complete?
 ---------------
 Not really - it doesn't handle attributes nor namespaces (except strip namespace prefix
 from tag names/elements).
+
+
+License
+-------
+Apache License, Version 2.0
 
 
 Thanks
