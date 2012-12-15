@@ -88,9 +88,9 @@ abstract class Testable
      **/
     protected static function Log( TestResult $result )
     {
-    	printf( "Test: %s was a %s %s\n"
+    	printf( "\nTest: %s was a %s %s\n\n"
     		,$result->getName()
-    		,$result->getSuccess() ? 'success' : 'failure'
+    		,$result->getSuccess() ? 'success' : 'FAILURE'
     		,$result->getSuccess() ? '' : sprintf( "\n%s (lines:%d-%d; file:%s)"
     			,$result->getException()->getMessage()
     			,$result->getTest()->getStartLine()

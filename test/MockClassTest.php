@@ -9,6 +9,12 @@ class MockClassTest extends Testable {
 		$this->mock = MockClass::mock();	
 	}
 
+
+	function test_that_mocks_have_unique_numbers() {
+		$mock2 = MockClass::mock();
+		$this->assertNotEquals("$this->mock", "$mock2");
+	}
+
 	function test_verifyZeroInteractions_on_mock_object_with_no_interactions() {
 		MockClass::verifyZeroInteractions($this->mock);
 	}
@@ -34,9 +40,25 @@ class MockClassTest extends Testable {
 		$this->assertEquals("abc", $result);
 	}
 
-	function test_that_mocks_have_unique_numbers() {
-		$mock2 = MockClass::mock();
-		$this->assertNotEquals("$this->mock", "$mock2");
+	function xtest_stubbing_method_no_argument_two_responses() {
+		MockClass::when($this->mock)->call()->return("abc", "cde");
+		$this->assertEquals("abc", $result = $this->mock->call());
+		$this->assertEquals("cde", $result = $this->mock->call());
+	}
+
+	function test_stubbing_two_no_arg_methods() {
+		MockClass::when($this->mock)->methodA()->return("a");
+		MockClass::when($this->mock)->methodB()->return("b");
+		$this->assertEquals("a", $result = $this->mock->methodA());
+		$this->assertEquals("b", $result = $this->mock->methodB());
+	}
+
+
+	function xtest_stubbing_method_no_argument_simple_return_forever() {
+		MockClass::when($this->mock)->call()->return("abc");
+		$this->assertEquals("abc", $result = $this->mock->call());
+		$this->assertEquals("abc", $result = $this->mock->call());
+		$this->assertEquals("abc", $result = $this->mock->call());
 	}
 
 	function xtest_stubbing_method_no_args_throw_exception() {

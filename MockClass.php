@@ -39,12 +39,31 @@ class MockClass {
 		dump("MockClass->__call($method_name, $arguments)");
 		$interaction = new MockInteraction($this, $method_name, $arguments);
 		array_push($this->interactions, $interaction);
+		if (isset($this->stubbed_method_handlers->$method_name)) {
+			$handler = $this->stubbed_method_handlers->$method_name;
+			return $handler->handleCall($arguments);
+		}
+		dump("no handler");
+		return NULL;
+	}
+	function __addStubbedMethodResponse($method_name, $expected_arguments, $responses) {
+		if (!isset($this->stubbed_method_handlers->$method_name)) {
+			$handler = new MethodStubHandler($this->mock, $method_name);
+			$this->stubbed_method_handlers->$method_name = $handler;
+		}
+		$handler = $this->stubbed_method_handlers->$method_name;
+		$handler->addStubbedResponse($expected_arguments, $responses);
+	}
+}
+
+class MethodStubHandler {
+	function addStubbedResponse($expected_arguments, $responses) {
+		$this->responses = $responses;
+	}
+	function handleCall($actual_arguments) {
 		if (isset($this->responses)) 
 		if (is_array($this->responses)) 
 		return array_shift($this->responses);
-	}
-	function __addStubbedMethodResponse($method_name, $arguments, $responses) {
-		$this->responses = $responses;
 	}
 }
 
