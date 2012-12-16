@@ -1,9 +1,6 @@
 <?php
 
-function dump($data) {
-	if (TRUE)
-		print "$data\n";
-}
+function dump($data) { if (TRUE) print "$data\n"; }
 	
 class MockClass {
 	
@@ -18,6 +15,9 @@ class MockClass {
 	}
 	public static function when($mock) {
 		return new MethodStubbingBuilder($mock);
+	}
+	public static function verify($mock, $times = 1) {
+		return new MethodVerificationBuilder($mock, $times);
 	}
 
 	function __construct($id) {
@@ -41,53 +41,124 @@ class MockClass {
 		array_push($this->interactions, $interaction);
 		if (isset($this->stubbed_method_handlers->$method_name)) {
 			$handler = $this->stubbed_method_handlers->$method_name;
+			$interaction->setHandler($handler);
 			return $handler->handleCall($arguments);
 		}
-		dump("no handler");
-		return NULL;
+		dump("MockClass->__call(...) - NO handler");
 	}
-	function __addStubbedMethodResponse($method_name, $expected_arguments, $responses) {
+	function __addStubbedMethodResponses($method_name, $expected_arguments, $responses) {
 		if (!isset($this->stubbed_method_handlers->$method_name)) {
-			$handler = new MethodStubHandler($this->mock, $method_name);
+			$handler = new MethodStubHandler($this, $method_name);
 			$this->stubbed_method_handlers->$method_name = $handler;
 		}
 		$handler = $this->stubbed_method_handlers->$method_name;
-		$handler->addStubbedResponse($expected_arguments, $responses);
+		$handler->addStubbedResponses($expected_arguments, $responses);
 	}
-}
-
-class MethodStubHandler {
-	function addStubbedResponse($expected_arguments, $responses) {
-		$this->responses = $responses;
+	function __addStubbedMethodExceptions($method_name, $expected_arguments, $exceptions) {
+		if (!isset($this->stubbed_method_handlers->$method_name)) {
+			$handler = new MethodStubHandler($this, $method_name);
+			$this->stubbed_method_handlers->$method_name = $handler;
+		}
+		$handler = $this->stubbed_method_handlers->$method_name;
+		$handler->addStubbedExceptions($expected_arguments, $exceptions);
 	}
-	function handleCall($actual_arguments) {
-		if (isset($this->responses)) 
-		if (is_array($this->responses)) 
-		return array_shift($this->responses);
-	}
-}
-
-class MethodStubbingAnswer {
-	function __construct($mock, $method_name, $arguments, $responses) {
-		dump("MethodStubbingAnswer");
-		$this->mock = $mock;
-		$this->method_name = $method_name;
-		$this->arguments = $arguments;
-		$this->responses = $responses;
-		$this->mock->__addStubbedMethodResponse($method_name, $arguments, $responses);
-	}
-	function __call($method_name, $actual_arguments) {
-		dump('__call($method_name)');
-		$response = array_unshift($this->responses);
-		return $response;
-	}
-	function __verify() {
-		// check that $this->response have all been consumed
-		if (empty($this->responses)) {
-		
+	function __verifyMethodInvokation($method_name, $expected_arguments, $expected_times) {
+		$last_match = null;
+		$actual_times = 0;
+		foreach ($this->interactions as $interaction) {
+			if ($interaction->methodNameMatches($method_name)) {
+				$method_match = $interaction;
+				if ($interaction->argumentsMatch($expected_arguments)) {
+					if ($interaction->isVerified()) {
+						continue;
+					}
+					$actual_times += 1;
+					$interaction->markVerified();
+				}
+			}
+		}
+		if ($actual_times !== $expected_times) {
+			$msg = "Method $method_name with arguments ... was invoked $actual_times, ".
+				"expected $expected_times";
+			throw new MockVerificationException($msg);
 		}
 	}
 }
+class MethodVerificationBuilder {
+	function __construct($mock, $times) {
+		$this->mock = $mock;
+		$this->times = $times;
+	}
+	function __call($method_name, $expected_arguments) {
+		$this->mock->__verifyMethodInvokation($method_name, $expected_arguments, $this->times);
+	}
+}
+class ArgumentMatcher {
+	function __construct($args, $response) {
+		$this->expected_arguments = $args;
+		$this->response = $response;
+		$this->consumed = FALSE;
+	}
+	function matches($actual_arguments) {
+
+		return $this->expected_arguments == $actual_arguments;
+	}
+	function isConsumed() {
+		return $this->consumed;
+	}
+	function getResponse() {
+		$this->consumed = TRUE;
+		return $this->response;
+	}
+}
+class ArgumentMatcherWithException extends ArgumentMatcher {
+	function getResponse() {
+		$exception = parent::getResponse();
+		throw $exception;
+	}
+}
+		
+
+class MethodStubHandler {
+	function __construct() {
+		$this->argument_matchers = array();
+	}
+	function addStubbedResponses($expected_arguments, $responses) {
+		if (!is_array($responses)) {
+			array_push($this->argument_matchers, new ArgumentMatcher($expected_arguments, $responses));
+		} else {
+			while (!empty($responses)) {
+				$matcher = new ArgumentMatcher($expected_arguments, array_shift($responses));
+				array_push($this->argument_matchers, $matcher);
+			}
+		}
+	}
+	function addStubbedExceptions($expected_arguments, $exceptions) {
+		if (!is_array($exceptions)) {
+			array_push($this->argument_matchers, new ArgumentMatcherWithException($expected_arguments, $exceptions));
+		} else {
+			while (!empty($exceptions)) {
+				$matcher = new ArgumentMatcherWithException($expected_arguments, array_shift($exceptions));
+				array_push($this->argument_matchers, $matcher);
+			}
+		}
+	}
+	function handleCall($actual_arguments) {
+		$match = null;
+		foreach ($this->argument_matchers as $matcher) {
+			if ($matcher->matches($actual_arguments)) {
+				$match = $matcher;
+				if (!$matcher->isConsumed()) {
+					return $matcher->getResponse();
+				}
+			}
+		}
+		if (isset($match)) {
+			return $matcher->getResponse();
+		}
+	}
+}
+
 class MethodStubbingResponseBuilder {
 	function __construct($mock, $method_name, $arguments) {
 		print "MethodStubbingResponseBuilder\n";
@@ -96,9 +167,10 @@ class MethodStubbingResponseBuilder {
 		$this->expected_arguments = $arguments;
 	}
 	function __call($method_name, $responses){
-		return new MethodStubbingAnswer($this->mock, $this->method_name, $this->expected_arguments, $responses);
+		$this->mock->__addStubbedMethodResponses($this->method_name, $this->expected_arguments, $responses);
 	}
-	function thenThrow(Exception $e) {
+	function thenThrow(Exception $exceptions) {
+		$this->mock->__addStubbedMethodExceptions($this->method_name, $this->expected_arguments, $exceptions);
 	}
 }
 class MethodStubbingBuilder {
@@ -111,6 +183,27 @@ class MethodStubbingBuilder {
 	}
 }
 class MockInteraction {
+	function __construct($mock, $method_name, $actual_arguments) {
+		$this->mock = $mock;
+		$this->method_name = $method_name;
+		$this->actual_arguments = $actual_arguments;
+		$this->verified = FALSE;
+	}
+	function setHandler($handler) {
+		$this->handler = $handler;
+	}
+	function methodNameMatches($method_name) {
+		return $this->method_name === $method_name;
+	}
+	function argumentsMatch($expected_arguments) {
+		return $this->actual_arguments === $expected_arguments;
+	}
+	function isVerified() {
+		return $this->verified;
+	}
+	function markVerified() {
+		$this->verified = true;
+	}
 }
 class MockVerificationException extends Exception {
 }
