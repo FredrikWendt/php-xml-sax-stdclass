@@ -9,6 +9,10 @@ class MockClassTest extends Testable {
 		$this->mock = MockClass::mock();	
 	}
 
+	function tearDown() {
+		MockClass::$__PRINT_DEBUG = FALSE;
+	}
+
 	function test_that_mocks_have_unique_numbers() {
 		$mock2 = MockClass::mock();
 		$this->assertNotEquals("$this->mock", "$mock2");
@@ -85,8 +89,28 @@ class MockClassTest extends Testable {
 	function xtest_stubbin_with_argument_matching_throw_exception() {
 	}
 
-	function xtest_stubbing_several_answers_in_one_go() {
-		when($mock->call())->return(1, 2, 3);
+	function test_stubbing_several_answers_in_one_go() {
+		MockClass::when($this->mock)->someMethod()->return(1, 2, 3);
+
+		$this->assertEquals(1, $result = $this->mock->someMethod());
+		$this->assertEquals(2, $result = $this->mock->someMethod());
+		$this->assertEquals(3, $result = $this->mock->someMethod());
+		// last arg is repeated
+		$this->assertEquals(3, $result = $this->mock->someMethod());
+		$this->assertEquals(3, $result = $this->mock->someMethod());
+	}
+
+	function test_stubbing_mixing_several_results_and_args() {
+		MockClass::when($this->mock)->someMethod("ints")->return(1, 2, 3);
+		MockClass::when($this->mock)->someMethod("strings")->return("a", "b", "c");
+
+		$this->assertEquals("a", $result = $this->mock->someMethod("strings"));
+		$this->assertEquals("b", $result = $this->mock->someMethod("strings"));
+		$this->assertEquals("c", $result = $this->mock->someMethod("strings"));
+
+		$this->assertEquals(1, $result = $this->mock->someMethod("ints"));
+		$this->assertEquals(2, $result = $this->mock->someMethod("ints"));
+		$this->assertEquals(3, $result = $this->mock->someMethod("ints"));
 	}
 
 	function test_verify_no_args_method_never_happened() {

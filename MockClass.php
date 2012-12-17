@@ -1,8 +1,9 @@
 <?php
 
-function dump($data) { if (TRUE) print "$data\n"; }
+function dump($data) { if (MockClass::$__PRINT_DEBUG) print "$data\n"; }
 	
 class MockClass {
+	static $__PRINT_DEBUG = FALSE;
 	
 	private $interactions = array();
 	private static $instance_counter = 1;
@@ -161,7 +162,7 @@ class MethodStubHandler {
 
 class MethodStubbingResponseBuilder {
 	function __construct($mock, $method_name, $arguments) {
-		print "MethodStubbingResponseBuilder\n";
+		dump("MethodStubbingResponseBuilder");
 		$this->mock = $mock;
 		$this->method_name = $method_name;
 		$this->expected_arguments = $arguments;
@@ -175,7 +176,7 @@ class MethodStubbingResponseBuilder {
 }
 class MethodStubbingBuilder {
 	function __construct($mock) {
-		print "MethodStubbingBuilder\n";
+		dump("MethodStubbingBuilder");
 		$this->mock = $mock;
 	}
 	function __call($method_name, $arguments) {

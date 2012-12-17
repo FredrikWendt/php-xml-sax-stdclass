@@ -88,9 +88,10 @@ abstract class Testable
      **/
     protected static function Log( TestResult $result )
     {
-    	printf( "\nTest: %s was a %s %s\n\n"
+    	printf( "%s: %s was a %s %s\n"
+    		,$result->getSuccess() ? 'PASS' : 'FAILURE '
     		,$result->getName()
-    		,$result->getSuccess() ? 'success' : 'FAILURE'
+    		,$result->getSuccess() ? 'success' : 'failure'
     		,$result->getSuccess() ? '' : sprintf( "\n%s (lines:%d-%d; file:%s)"
     			,$result->getException()->getMessage()
     			,$result->getTest()->getStartLine()
@@ -107,13 +108,18 @@ abstract class Testable
     		$methodname = $method->getName();
     		if ( strlen( $methodname ) > 4 && substr( $methodname, 0, 4 ) == 'test' ) {
     			//ob_start();
-    			try {
+			if (method_exists($that, "setUp")) {
 				$that->setUp();
+			}
+    			try {
     				$that->$methodname();
     				$result = TestResult::CreateSuccess( $that, $method );
     			} catch( Exception $ex ) {
     				$result = TestResult::CreateFailure( $that, $method, $ex );
     			}
+			if (method_exists($that, "tearDown")) {
+				$that->tearDown();
+			}
     			//$output = ob_get_clean();
     			//$result->setOutput( $output );
     			Testable::Log( $result );
