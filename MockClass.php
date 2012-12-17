@@ -168,10 +168,11 @@ class MethodStubbingResponseBuilder {
 		$this->expected_arguments = $arguments;
 	}
 	function __call($method_name, $responses){
-		$this->mock->__addStubbedMethodResponses($this->method_name, $this->expected_arguments, $responses);
-	}
-	function thenThrow(Exception $exceptions) {
-		$this->mock->__addStubbedMethodExceptions($this->method_name, $this->expected_arguments, $exceptions);
+		if ("throw" === $method_name) {
+			$this->mock->__addStubbedMethodExceptions($this->method_name, $this->expected_arguments, $responses);
+		} else {
+			$this->mock->__addStubbedMethodResponses($this->method_name, $this->expected_arguments, $responses);
+		}
 	}
 }
 class MethodStubbingBuilder {

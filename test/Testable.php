@@ -142,6 +142,12 @@ abstract class Testable
 			$this->fail("Expected exception message to contain '$string_to_contain', but did not: '". $message ."'");
 		}
 	}
+	function assertNotNull($msg, $actual) {
+		if (isset($actual)) {
+			return;
+		}
+		$this->fail($msg);
+	}
 	function fail($msg) {
 		throw new Exception("Test failure: ". $msg);
 	}

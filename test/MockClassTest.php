@@ -67,7 +67,7 @@ class MockClassTest extends Testable {
 	function test_stubbing_method_no_args_throw_exception() {
 		$exception = new Exception("asdf");
 		$e;
-		MockClass::when($this->mock)->call()->thenThrow($exception);
+		MockClass::when($this->mock)->call()->throw($exception);
 		try {
 			$this->mock->call();
 			$this->fail("should've thrown Exception");
@@ -86,7 +86,24 @@ class MockClassTest extends Testable {
 		$this->assertEquals("c", $result = $this->mock->method("c"));
 	}
 
-	function xtest_stubbin_with_argument_matching_throw_exception() {
+	function test_stubbin_with_argument_matching_throw_exception() {
+		$exception = new Exception("test exception");
+		MockClass::when($this->mock)->method("a")->return("a");
+		MockClass::when($this->mock)->method("b")->throw($exception);
+
+
+		// act
+		$actual = NULL;
+		$this->assertEquals("a", $this->mock->method("a"));
+		try {
+			$this->mock->method("b");
+		} catch (Exception $e) {
+			$actual = $e;
+		}
+
+		$this->assertNotNull("mock was stubbed to throw exception but didn't", $actual);
+		$this->assertEquals($exception, $actual);
+		$this->assertExceptionContains($actual, $exception->getMessage());
 	}
 
 	function test_stubbing_several_answers_in_one_go() {
